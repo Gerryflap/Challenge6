@@ -9,7 +9,7 @@ class MyTcpHandler extends TcpHandler {
 		super();
 
 		boolean done = false;
-		if (!done) {
+		while (!done) {
 			// TODO: Implement your client for the server by combining:
 			//        - Send packets, use this.sendData(byte[]).
 			//           The data passed to sendData should contain raw
@@ -30,12 +30,15 @@ class MyTcpHandler extends TcpHandler {
 
             MyTCPPacket tcpData = new MyTCPPacket();
             tcpData.destPort = 7711;
-            tcpData.sourcePort = 7711;
-            tcpData.sequenceNumber = 10;
+            tcpData.sourcePort = 7777;
+            tcpData.sequenceNumber = 1864871;
+            //ipv6Data.nextHeader = 6;
             tcpData.flags = Short.parseShort("00000010" , 2);
             tcpData.windowSize = 1024;
+            //tcpData.data = new byte[100];
 
             this.sendData(ipv6Data.toByteArray(tcpData.toByteArray()));
+            this.receiveData(1000);
 
 
 
@@ -47,7 +50,7 @@ class MyTcpHandler extends TcpHandler {
         public byte trafficClass;
         public int flowLabel;
         public byte nextHeader = (byte) 253;
-        public byte hopLimit;
+        public byte hopLimit = (byte) 200;
         public byte[] sourceAddress;
         public byte[] destAddress;
 
@@ -65,8 +68,8 @@ class MyTcpHandler extends TcpHandler {
         }
 
         public byte[] toByteArray(byte[] data){
-            short payloadLength = (short) (40 + data.length);
-            byte[] output = new byte[40];
+            short payloadLength = (short) (data.length);
+            byte[] output = new byte[40 + payloadLength];
             output[0] = (byte) ((version << 4) + (trafficClass >> 4));
 
             output[1] = (byte) ((trafficClass << 4) + (flowLabel >> 16));
@@ -80,7 +83,7 @@ class MyTcpHandler extends TcpHandler {
             output[7] = hopLimit;
 
             putInArray(output, sourceAddress, 8);
-            putInArray(output, sourceAddress, 24);
+            putInArray(output, destAddress, 24);
             System.out.println(output[8]);
 
             putInArray(output, data, 40);
@@ -94,7 +97,7 @@ class MyTcpHandler extends TcpHandler {
         public short sourcePort;
         public int sequenceNumber;
         public int ackNumber;
-        public byte dataOffset = 0;
+        public byte dataOffset = 5;
         public byte reserved;
         public short flags;
         public short windowSize;
@@ -102,11 +105,11 @@ class MyTcpHandler extends TcpHandler {
         public byte[] data;
 
         public MyTCPPacket(){
-
+            data = new byte[0];
         }
 
         public byte[] toByteArray(){
-            byte[] output = new byte[20];
+            byte[] output = new byte[20 + data.length];
             output[0] = (byte) (sourcePort >> 8);
             output[1] = (byte) (sourcePort);
 
