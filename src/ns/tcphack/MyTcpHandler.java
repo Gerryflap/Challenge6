@@ -38,6 +38,10 @@ class MyTcpHandler extends TcpHandler {
         tcpData.windowSize = 4976;
         //tcpData.data = new byte[100];
 
+        MyTCPPacket tcpPacket = new MyTCPPacket();
+        tcpPacket.fill(ipv6Data.toByteArray(tcpData.toByteArray()));
+        System.out.printf("Our seqNum: %s, double converted: %s \n", tcpData.sequenceNumber, tcpPacket.sequenceNumber);
+
 		while (!done) {
 			// TODO: Implement your client for the server by combining:
 			//        - Send packets, use this.sendData(byte[]).
@@ -207,13 +211,20 @@ class MyTcpHandler extends TcpHandler {
         }
 
         public void fill(byte[] packet){
-            sequenceNumber = (int) ((packet[40 + 4] * Math.pow(2, 24)) + (packet[40 + 5] * Math.pow(2, 16)) + (packet[40 + 6] * Math.pow(2, 8)) + (packet[40 + 7]));
-            ackNumber = (packet[40 + 8] << 24) + (packet[40 + 9] << 16) + (packet[40 + 10] << 8) + (packet[40 + 11]);
+            sequenceNumber = ((fB(packet[40 + 4]) << 24) | (fB(packet[40 + 5]) << 16) | (fB(packet[40 + 6]) << 8) | (fB(packet[40 + 7])));
+            ackNumber = (fB(packet[40 + 8]) << 24) | (fB(packet[40 + 9]) << 16) | (fB(packet[40 + 10]) << 8) | (fB(packet[40 + 11]));
             flags = (short) ((packet[40 + 12]  << 8) + packet[40 + 13]);
             windowSize = (short) ((packet[40+14] << 8) + packet[40+15]);
         }
 
 
+    }
+
+    public static int fB(byte data){
+        //Function to fix signed stuff.
+        long dataL = (long) data;
+        int dataI = (int )dataL & 0xff;
+        return dataI;
     }
 
     public static void putInArray(byte[] array1, byte[] array2, int atIndex){
