@@ -20,11 +20,55 @@ class MyTcpHandler extends TcpHandler {
 			//           milliseconds for receiveData to complete. When the timeout expires before a
 			//           packet is received, an empty array will be returned.
 			//
-			//           The data you'll receive and send will and should contain all packet 
+			//           The data you'll receive and send will and should contain all packet
 			//           data from the network layer and up.
+
+
 		}
 	}
+    public class MyIPv6Packet {
+        public byte version = 6;
+        public byte trafficClass;
+        public int flowLabel;
+        public byte nextHeader = (byte) 253;
+        public byte hopLimit;
+        public byte[] sourceAddress;
+        public byte[] destAddress;
 
+
+        public byte[] convertAddress(String address){
+            byte[] out = new byte[16];
+            String[] result = address.split(":");
+            for (int i = 0; i < result.length; i++) {
+                out[i] = Byte.parseByte(result[i], 16);
+            }
+            return out;
+        }
+
+        public byte[] toByteArray(byte[] data){
+            short payloadLength = (short) (40 + data.length);
+            byte[] output = new byte[8];
+            output[0] = (byte) (version << 4 + trafficClass >> 4);
+
+            output[1] = (byte) (trafficClass << 4 + flowLabel >> 16);
+            output[2] = (byte) (flowLabel >> 8);
+            output[3] = (byte) flowLabel;
+
+            output[4] = (byte) (payloadLength >>8);
+            output[5] = (byte) payloadLength;
+
+            output[6] = nextHeader;
+            output[7] = hopLimit;
+
+            putInArray(output, sourceAddress, 8);
+            putInArray(output, sourceAddress, 24);
+
+            putInArray(output, data, 40);
+
+            return output;
+        }
+
+    }
     public class MyTCPPacket {
         public short destPort;
         public short sourcePort;
@@ -74,5 +118,12 @@ class MyTcpHandler extends TcpHandler {
             return output;
         }
 
+
+    }
+
+    public static void putInArray(byte[] array1, byte[] array2, int atIndex){
+        for (int i = 0; i + atIndex< array1.length && i < array2.length; i++) {
+            array1[i + atIndex] = array2[i];
+        }
     }
 }
