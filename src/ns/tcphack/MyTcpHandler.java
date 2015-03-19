@@ -50,7 +50,7 @@ class MyTcpHandler extends TcpHandler {
             this.sendData(ipv6Data.toByteArray(tcpData.toByteArray()));
             MyTCPPacket recieved = new MyTCPPacket();
             recieved.fill(this.receiveData(1000));
-            System.out.println(recieved.sequenceNumber);
+            System.out.println(Integer.toBinaryString(recieved.flags));
 
             //this.receiveData(1000);
 
@@ -169,6 +169,7 @@ class MyTcpHandler extends TcpHandler {
         public void fill(byte[] packet){
             sequenceNumber = (packet[40 + 4] << 24) + (packet[40 + 5] << 16) + (packet[40 + 6] << 8) + (packet[40 + 7]);
             ackNumber = (packet[40 + 4] << 24) + (packet[40 + 5] << 16) + (packet[40 + 6] << 8) + (packet[40 + 7]);
+            flags = (short) ((packet[40 + 12]  << 8) + packet[40 + 13]);
         }
 
 
