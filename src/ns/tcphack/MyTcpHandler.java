@@ -9,7 +9,7 @@ class MyTcpHandler extends TcpHandler {
 		super();
 
 		boolean done = false;
-		while (!done) {
+		if (!done) {
 			// TODO: Implement your client for the server by combining:
 			//        - Send packets, use this.sendData(byte[]).
 			//           The data passed to sendData should contain raw
@@ -38,7 +38,9 @@ class MyTcpHandler extends TcpHandler {
             //tcpData.data = new byte[100];
 
             this.sendData(ipv6Data.toByteArray(tcpData.toByteArray()));
-            this.receiveData(1000);
+            MyTCPPacket recieved = new MyTCPPacket();
+            recieved.fill(this.receiveData(1000));
+            System.out.println(recieved.sequenceNumber);
 
 
 
@@ -139,6 +141,11 @@ class MyTcpHandler extends TcpHandler {
             output[19] = (byte) (0);
 
             return output;
+        }
+
+        public void fill(byte[] packet){
+            sequenceNumber = (packet[40 + 4] << 24) + (packet[40 + 5] << 16) + (packet[40 + 6] << 8) + (packet[40 + 7]);
+            ackNumber = (packet[40 + 4] << 24) + (packet[40 + 5] << 16) + (packet[40 + 6] << 8) + (packet[40 + 7]);
         }
 
 
