@@ -43,7 +43,7 @@ class MyTcpHandler extends TcpHandler {
             tcpData.sourcePort = 7777;
             tcpData.sequenceNumber = 1864871;
             //ipv6Data.nextHeader = 6;
-            tcpData.flags = Short.parseShort("00000010" , 2);
+            tcpData.flags = Short.parseShort("000000010" , 2);
             tcpData.windowSize = 1024;
             //tcpData.data = new byte[100];
 
@@ -55,8 +55,15 @@ class MyTcpHandler extends TcpHandler {
             //this.receiveData(1000);
 
             if (this.receiveData(1000) != null){
-                byte[] res = this.httpGet.getBytes();
-
+                byte[] getArray = this.httpGet.getBytes();
+                MyTCPPacket ack = new MyTCPPacket();
+                ack.ackNumber = recieved.sequenceNumber + 1;
+                ack.sequenceNumber = recieved.ackNumber;
+                ack.sourcePort = 7777;
+                ack.destPort = 7711;
+                ack.flags = Short.parseShort("000010000" , 2);
+                ack.windowSize = 1024;
+                ack.data = getArray;
             }
 
 
