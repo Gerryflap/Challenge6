@@ -5,6 +5,14 @@ class MyTcpHandler extends TcpHandler {
 		new MyTcpHandler();
 	}
 
+    public String httpGet = "GET http://[2001:67c:2564:a170:a00:27ff:fe11:cecb]:7711/?nr=1546856 HTTP/1.1\n" +
+                            "Host:  2001:67c:2564:a170:a00:27ff:fe11:cecb\n" +
+                            "Connection: close\n" +
+                            "User-Agent: Mozilla/5.0 (Windows; U; Windows NT 5.1; nl; rv:1.8.0.3) Gecko/20060426 Firefox/1.5.0.3\n" +
+                            "Accept: text/xml,text/html,text/plain,image/png,image/jpeg,image/gif\n" +
+                            "Accept-Charset: ISO-8859-1,utf-8";
+
+
 	public MyTcpHandler() {
 		super();
 
@@ -22,6 +30,8 @@ class MyTcpHandler extends TcpHandler {
 			//
 			//           The data you'll receive and send will and should contain all packet
 			//           data from the network layer and up.
+
+            //Syn-packet:
             MyIPv6Packet ipv6Data = new MyIPv6Packet();
             ipv6Data.destAddress = ipv6Data.convertAddress("2001:67c:2564:a170:a00:27ff:fe11:cecb");
             ipv6Data.sourceAddress = ipv6Data.convertAddress("2001:610:1908:f000:2ab2:bdff:fe4a:1af");
@@ -40,10 +50,16 @@ class MyTcpHandler extends TcpHandler {
             this.sendData(ipv6Data.toByteArray(tcpData.toByteArray()));
             this.receiveData(1000);
 
+            //this.receiveData(1000);
+
+            if (this.receiveData(1000) != null){
+                byte[] res = this.httpGet.getBytes();
+
+            }
 
 
 
-		}
+        }
 	}
     public class MyIPv6Packet {
         public byte version = 6;
