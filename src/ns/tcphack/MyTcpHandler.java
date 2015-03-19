@@ -5,19 +5,40 @@ class MyTcpHandler extends TcpHandler {
 		new MyTcpHandler();
 	}
 
-    public String httpGet = "GET http://[2001:67c:2564:a170:a00:27ff:fe11:cecb]:7711/?nr=1546856 HTTP/1.1\n" +
+    public String httpGet = "GET /?nr=1546856 HTTP/1.1\n"; /**+
                             "Host:  2001:67c:2564:a170:a00:27ff:fe11:cecb\n" +
                             "Connection: close\n" +
                             "User-Agent: Mozilla/5.0 (Windows; U; Windows NT 5.1; nl; rv:1.8.0.3) Gecko/20060426 Firefox/1.5.0.3\n" +
                             "Accept: text/xml,text/html,text/plain,image/png,image/jpeg,image/gif\n" +
                             "Accept-Charset: ISO-8859-1,utf-8";
+     **/
 
 
 	public MyTcpHandler() {
 		super();
 
 		boolean done = false;
-		if (!done) {
+
+
+        //Syn-packet:
+        MyIPv6Packet ipv6Data = new MyIPv6Packet();
+        ipv6Data.destAddress = ipv6Data.convertAddress("2001:67c:2564:a170:a00:27ff:fe11:cecb");
+        ipv6Data.sourceAddress = ipv6Data.convertAddress("2001:610:1908:f000:2ab2:bdff:fe4a:1af");
+
+
+        MyTCPPacket tcpData = new MyTCPPacket();
+        tcpData.destPort = 7711;
+        tcpData.sourcePort = 7777;
+        tcpData.sequenceNumber = 0;
+        //ipv6Data.nextHeader = 6;
+        tcpData.flags = Short.parseShort("000000010" , 2);
+        //tcpData.flags = Short.parseShort("111111111" , 2);
+        //tcpData.data = new byte[10000];
+
+        tcpData.windowSize = 4976;
+        //tcpData.data = new byte[100];
+
+		while (!done) {
 			// TODO: Implement your client for the server by combining:
 			//        - Send packets, use this.sendData(byte[]).
 			//           The data passed to sendData should contain raw
@@ -31,44 +52,63 @@ class MyTcpHandler extends TcpHandler {
 			//           The data you'll receive and send will and should contain all packet
 			//           data from the network layer and up.
 
-            //Syn-packet:
-            MyIPv6Packet ipv6Data = new MyIPv6Packet();
-            ipv6Data.destAddress = ipv6Data.convertAddress("2001:67c:2564:a170:a00:27ff:fe11:cecb");
-            ipv6Data.sourceAddress = ipv6Data.convertAddress("2001:610:1908:f000:2ab2:bdff:fe4a:1af");
 
+            /**
+             * 111000111010010100111
+             * 111000111001110101000
+             */
 
-
-            MyTCPPacket tcpData = new MyTCPPacket();
-            tcpData.destPort = 7711;
-            tcpData.sourcePort = 7777;
-            tcpData.sequenceNumber = 1864871;
-            //ipv6Data.nextHeader = 6;
-            tcpData.flags = Short.parseShort("000000010" , 2);
-            tcpData.windowSize = 1024;
-            //tcpData.data = new byte[100];
-
-            this.sendData(ipv6Data.toByteArray(tcpData.toByteArray()));
             MyTCPPacket recieved = new MyTCPPacket();
-            recieved.fill(this.receiveData(1000));
-            System.out.println(Integer.toBinaryString(recieved.flags));
+            try {
+                recieved.fill(this.receiveData(1000));
 
-            //this.receiveData(1000);
+                System.out.println("sequenceNumber: "+Integer.toBinaryString(recieved.sequenceNumber));
+                System.out.println("ACK: "+Integer.toBinaryString(recieved.ackNumber));
+                System.out.println("Flags: "+Integer.toBinaryString(recieved.flags));
+                System.out.println("Windowsize: "+recieved.windowSize);
 
-            if (this.receiveData(1000) != null){
+                //this.receiveData(1000);
+
                 byte[] getArray = this.httpGet.getBytes();
                 MyTCPPacket ack = new MyTCPPacket();
                 ack.ackNumber = recieved.sequenceNumber + 1;
                 ack.sequenceNumber = recieved.ackNumber;
                 ack.sourcePort = 7777;
                 ack.destPort = 7711;
-                ack.flags = Short.parseShort("000010000" , 2);
-                ack.windowSize = 1024;
-                ack.data = getArray;
+                if ((recieved.flags & 4)!= 0){
+                    ack.flags = Short.parseShort("000000010" , 2);
+                    ack.windowSize = recieved.windowSize;
+                } else {
+                    ack.flags = Short.parseShort("000010000", 2);
+                    ack.windowSize = recieved.windowSize;
+                    //ack.data = getArray;
+                }
+                this.sendData(ipv6Data.toByteArray(ack.toByteArray()));
+
+                System.out.println("Our ack sequence number: "+Integer.toBinaryString(ack.sequenceNumber));
+                System.out.println("Our ack ACK number: "+Integer.toBinaryString(ack.ackNumber));
+
+
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            catch(ArrayIndexOutOfBoundsException e)
+            {
+
+
+                this.sendData(ipv6Data.toByteArray(tcpData.toByteArray()));
+
+                System.out.println("Our sequence number: "+Integer.toBinaryString(tcpData.sequenceNumber));
+
             }
 
 
-
         }
+
+
 	}
     public class MyIPv6Packet {
         public byte version = 6;
@@ -167,9 +207,10 @@ class MyTcpHandler extends TcpHandler {
         }
 
         public void fill(byte[] packet){
-            sequenceNumber = (packet[40 + 4] << 24) + (packet[40 + 5] << 16) + (packet[40 + 6] << 8) + (packet[40 + 7]);
-            ackNumber = (packet[40 + 4] << 24) + (packet[40 + 5] << 16) + (packet[40 + 6] << 8) + (packet[40 + 7]);
+            sequenceNumber = (int) ((packet[40 + 4] * Math.pow(2, 24)) + (packet[40 + 5] * Math.pow(2, 16)) + (packet[40 + 6] * Math.pow(2, 8)) + (packet[40 + 7]));
+            ackNumber = (packet[40 + 8] << 24) + (packet[40 + 9] << 16) + (packet[40 + 10] << 8) + (packet[40 + 11]);
             flags = (short) ((packet[40 + 12]  << 8) + packet[40 + 13]);
+            windowSize = (short) ((packet[40+14] << 8) + packet[40+15]);
         }
 
 
